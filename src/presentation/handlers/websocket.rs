@@ -4,7 +4,6 @@ use axum::{
 };
 use axum::extract::ws::Message as WsMessage;
 use futures::{sink::SinkExt, stream::StreamExt};
-use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{error, info};
@@ -35,17 +34,13 @@ async fn websocket_connection(ws: WebSocket, state: AppState) {
 
     info!("WebSocket client connected");
 
-    // Create Redis connection for pub/sub
-    let redis_client = state.redis_pubsub.get_client();
-    let pubsub_conn = match redis_client.get_async_connection().await {
-        Ok(conn) => conn,
+    let mut pubsub = match state.redis_pubsub.get_client().get_async_pubsub().await {
+        Ok(pubsub) => pubsub,
         Err(e) => {
-            error!("Failed to get Redis connection: {}", e);
+            error!("Failed to get Redis pubsub connection: {}", e);
             return;
         }
     };
-    
-    let mut pubsub = pubsub_conn.into_pubsub();
     
     if let Err(e) = pubsub.subscribe("messages").await {
         error!("Failed to subscribe to Redis channel: {}", e);
@@ -65,7 +60,7 @@ async fn websocket_connection(ws: WebSocket, state: AppState) {
                 }
             };
 
-            if sender.send(WsMessage::Text(payload)).await.is_err() {
+            if sender.send(WsMessage::Text(payload.into())).await.is_err() {
                 break;
             }
         }

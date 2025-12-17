@@ -33,7 +33,7 @@ impl RedisPubSub {
 impl PubSubService for RedisPubSub {
     async fn publish(&self, channel: &str, message: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = self.conn_manager.clone();
-        conn.publish(channel, message).await?;
+        conn.publish::<_, _, ()>(channel, message).await?;
         Ok(())
     }
 
