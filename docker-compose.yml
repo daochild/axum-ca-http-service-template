@@ -4,10 +4,12 @@ services:
   postgres:
     image: postgres:18-alpine
     container_name: tokio-postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tokio_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -38,12 +40,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: tokio-app
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tokio_test
-      REDIS_URL: redis://redis:6379
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8080
-      RUST_LOG: info
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_PORT: ${SERVER_PORT}
+      RUST_LOG: debug
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
@@ -57,6 +61,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   tokio_test:
